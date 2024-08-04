@@ -1,0 +1,53 @@
+'Eliminar segunda página pdf
+
+#If VBA7 Then
+    Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As LongPtr)
+#Else
+    Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+#End If  
+
+Sub EliminarSegundaPaginaPDF()
+    Dim fs As Object
+    Dim carpeta As String
+    Dim archivo As String
+    Dim comando As String
+    Dim tempArchivo As String
+    
+    ' Establece la carpeta que contiene los archivos PDF
+    carpeta = "M:\Comun\Escaner\Recibos\"
+    
+    ' Crea un objeto FileSystemObject para recorrer la carpeta
+    Set fs = CreateObject("Scripting.FileSystemObject")
+    
+    ' Recorre todos los archivos en la carpeta
+    archivo = Dir(carpeta & "*.pdf")
+    
+    Do While archivo <> ""
+        tempArchivo = carpeta & "temp_" & archivo
+        ' Genera el comando para eliminar la segunda página del PDF
+        comando = "pdftk " & Chr(34) & carpeta & archivo & Chr(34) & " cat 1 output " & Chr(34) & tempArchivo & Chr(34)
+        
+        ' Ejecuta el comando y espera a que se complete
+        Shell comando, vbHide
+        DoEvents ' Asegura que el comando se ejecute completamente
+        
+        ' Verifica si el archivo temporal se ha creado
+        If fs.FileExists(tempArchivo) Then
+            ' Reemplaza el archivo original con el archivo modificado
+            fs.DeleteFile (carpeta & archivo)
+            fs.MoveFile tempArchivo, carpeta & archivo
+        Else
+            MsgBox "Error al crear archivo temporal para " & archivo, vbCritical
+        End If
+        
+        ' Espera 1 segundo antes de procesar el siguiente archivo
+        Sleep 1000
+        
+        ' Obtiene el siguiente archivo
+        archivo = Dir
+    Loop
+    
+    MsgBox "Proceso completado."
+End Sub
+
+
