@@ -1,0 +1,33 @@
+Sub EliminarArchivos(n, path As String)
+    Dim folderPath As String
+    Dim fso As Object
+    Dim file As Object
+    Dim folder As Object
+    
+    ' Especifica la ruta de la carpeta
+    folderPath = "M:\juju\juju1\"
+    
+    ' Crea un objeto FileSystemObject
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Verifica si la carpeta existe
+    If fso.FolderExists(folderPath) Then
+        ' Establece la carpeta objetivo
+        Set folder = fso.GetFolder(folderPath)
+        
+        ' Recorre cada archivo en la carpeta y elimínalo
+        For Each file In folder.Files
+            file.Delete
+        Next file
+    Else
+        MsgBox "La carpeta especificada no existe.", vbExclamation
+    End If
+    
+    ' Limpia los objetos
+    Set file = Nothing
+    Set folder = Nothing
+    Set fso = Nothing
+End Sub
+
+
+
