@@ -1,0 +1,120 @@
+'//Inicio: Comprobar si hay directorios vacios ...................................................................................................................................................
+
+
+Sub CheckEmptyFolders()
+    Dim folderPath As String
+    Dim folder As Object
+    Dim fso As Object
+    Dim fd As FileDialog
+    Dim emptyFolders As Collection
+    
+    ' Crear objeto FileSystemObject
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Crear una colección para almacenar carpetas vacías
+    Set emptyFolders = New Collection
+    
+    ' Crear un cuadro de diálogo de selección de carpeta
+    Set fd = Application.FileDialog(msoFileDialogFolderPicker)
+    
+    ' Configurar el cuadro de diálogo
+    With fd
+        .Title = "Seleccione el directorio a analizar"
+        .AllowMultiSelect = False
+        If .Show = -1 Then ' Si el usuario selecciona una carpeta
+            folderPath = .SelectedItems(1)
+        Else
+            MsgBox "No se seleccionó ningún directorio. El proceso se ha detenido.", vbExclamation
+            Exit Sub
+        End If
+    End With
+    
+    ' Verificar que la carpeta exista
+    If Not fso.FolderExists(folderPath) Then
+        MsgBox "El directorio especificado no existe.", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Llamar a la función recursiva para verificar carpetas vacías
+    Set folder = fso.GetFolder(folderPath)
+    CheckFolder folder, emptyFolders
+    
+    ' Crear archivo de texto con el resultado
+    CreateResultFile folderPath, emptyFolders
+End Sub
+
+Sub CheckFolder(ByVal folder As Object, ByRef emptyFolders As Collection)
+    Dim subFolder As Object
+    Dim fso As Object
+    Dim item As Object
+    Dim isEmpty As Boolean
+    
+    ' Crear objeto FileSystemObject
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Asumir que la carpeta está vacía hasta que se pruebe lo contrario
+    isEmpty = True
+    
+    ' Verificar si hay archivos en la carpeta
+    For Each item In folder.Files
+        isEmpty = False
+        Exit For
+    Next item
+    
+    ' Verificar si hay subcarpetas
+    For Each subFolder In folder.SubFolders
+        isEmpty = False
+        Exit For
+    Next subFolder
+    
+    ' Si la carpeta está vacía, agregar a la colección
+    If isEmpty Then
+        emptyFolders.Add folder.path
+    End If
+    
+    ' Recorrer subcarpetas recursivamente
+    For Each subFolder In folder.SubFolders
+        CheckFolder subFolder, emptyFolders
+    Next subFolder
+End Sub
+
+Sub CreateResultFile(ByVal rootFolderPath As String, ByVal emptyFolders As Collection)
+    Dim fso As Object
+    Dim txtFile As Object
+    Dim filePath As String
+    Dim folderPath As Variant
+    Dim timestamp As String
+    
+    ' Crear objeto FileSystemObject
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Obtener el timestamp actual en el formato deseado
+    timestamp = Format(Now, "yyyymmddhhmmss")
+    
+    ' Definir la ruta del archivo de texto con el timestamp
+    filePath = rootFolderPath & "\" & timestamp & ".txt"
+    
+    ' Crear y abrir el archivo de texto
+    Set txtFile = fso.CreateTextFile(filePath, True)
+    
+    ' Escribir resultados en el archivo de texto
+    txtFile.WriteLine "Carpetas vacías en " & rootFolderPath & ":"
+    txtFile.WriteLine "---------------------------------------"
+    
+    If emptyFolders.Count = 0 Then
+        txtFile.WriteLine "No se encontraron carpetas vacías."
+    Else
+        For Each folderPath In emptyFolders
+            txtFile.WriteLine folderPath
+        Next folderPath
+    End If
+    
+    ' Cerrar el archivo de texto
+    txtFile.Close
+    
+    ' Informar al usuario que el archivo ha sido creado
+    MsgBox "El archivo de resultados se ha creado en: " & filePath, vbInformation
+End Sub
+
+
+'//Fin Comprobar si hay directorios vacios ...................................................................................................................................................
